@@ -1,0 +1,37 @@
+name: Publish design preview to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: preview-pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout review repository
+        uses: actions/checkout@v4
+      - name: Verify preview document
+        run: |
+          test -s index.html
+          grep -q "DESIGN REVIEW ONLY" index.html
+          mkdir -p _site
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload preview
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy review
+        id: deployment
+        uses: actions/deploy-pages@v4
